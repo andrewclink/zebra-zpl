@@ -33,6 +33,7 @@ module Zebra
         element.width = self.width if element.respond_to?("width=") && element.width.nil?
         
         # Support variable text elements
+        puts "* Appending element #{element.inspect}"
         if element.respond_to?(:variable?) && element.wants_variable? && element.variable_id.nil?
           # Pre-increment and assign a ^FN
           @variable_count += 1
@@ -47,8 +48,8 @@ module Zebra
         elements << element
       end
       
-      def with_variable_data(&block)
-        vardata = VariableData.new(self)
+      def with_variable_data(options={}, &block)
+        vardata = VariableDataElement.new(self, options)
         yield(vardata)
         @variables << vardata
       end
@@ -91,6 +92,7 @@ module Zebra
           puts "Appending vardata:  #{vardata.map.inspect}"
           vardata.map.each do |vname, value|
             elm = @variable_elements[vname]
+            puts @variable_elements.inspect and next if elm.nil?
             fn = elm.variable_id
             puts "-> FN#{fn} = #{value}"
           end

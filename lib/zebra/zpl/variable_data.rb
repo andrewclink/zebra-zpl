@@ -2,7 +2,53 @@
 
 module Zebra
   module Zpl
-    class VariableData
+    
+    module VariableData
+      attr_accessor :name, :variable_id
+      attr_reader :wants_variable
+      
+      # Tell this element it should have variable field data
+      def variable=(flag)
+        @wants_variable = flag
+        @variable_id = nil unless flag
+      end
+    
+      # Does this element have variable field data?
+      def variable?
+        !@variable_id.nil?
+      end
+      
+      def wants_variable?
+        @wants_variable
+      end
+      
+      def data=(data)
+        if data==:variable
+          puts "Field wants variable"
+          @wants_variable = true
+        end
+
+        @data = data
+      end
+      
+      def data
+        @data
+      end
+      
+      def zpl_field_data
+        if @variable_id.nil?
+          # Static field data
+          "^FD#{data}^FS" 
+        else
+          # Variable field number
+          "^FN#{@variable_id}^FS"
+        end
+      end
+      
+    end
+    
+    # Manages a copy of the label with variable data in it.
+    class VariableDataElement
       
       attr_accessor :copies, :map
       
@@ -10,6 +56,7 @@ module Zebra
         raise ArgumentError.new("Label is required") if label.nil?
         @label = label
         @map = {}
+        @copies = options[:copies]
       end
       
       def []=(vname, value)
@@ -28,10 +75,14 @@ module Zebra
           value = map[vname] || ''
           fn = elm.variable_id
 
-          str << "^FN#{fn}^FD#{value}^FS\n"
+          str << if elm.respond_to?(:to_variable_zpl)
+            elm.to_variable_zpl(value)
+          else
+            "^FN#{fn}^FD#{value}^FS\n"
+          end
         end
         
-        str << "^PQ#{@copies}^XZ\n"
+        str << "^PQ#{@copies||1}^XZ\n"
         
         str
       end

@@ -1,39 +1,16 @@
 require "zebra/zpl/printable"
+require "zebra/zpl/variable_data"
 
 module Zebra
   module Zpl
     class Text
       include Printable
+      include VariableData
 
       class InvalidMaxLinesError < StandardError; end
 
-      attr_accessor :name, :variable_id
-      attr_reader :font_size, :font_type, :width, :line_spacing, :hanging_indent, :bold, :wants_variable
+      attr_reader :font_size, :font_type, :width, :line_spacing, :hanging_indent, :bold
       
-      # Tell this element it should have variable field data
-      def variable=(flag)
-        @wants_variable = flag
-        @variable_id = nil unless flag
-      end
-    
-      # Does this element have variable field data?
-      def variable?
-        !@variable_id.nil?
-      end
-      
-      def wants_variable?
-        @wants_variable
-      end
-      
-      def data=(data)
-        if data==:variable
-          puts "Field wants variable"
-          @wants_variable = true
-        end
-
-        @data = data
-      end
-
       def font_size=(f)
         FontSize.validate_font_size f
         @font_size = f
@@ -111,23 +88,13 @@ module Zebra
       def to_zpl
         check_attributes
         if !bold.nil?
-          "\n^FW#{rotation}^CF#{font_type},#{font_size}^CI28^FO#{x+2},#{y}^FB#{width},#{max_lines},#{line_spacing},#{justification},#{hanging_indent}#{zpl_field_data}^FS" +
-          "\n^FW#{rotation}^CF#{font_type},#{font_size}^CI28^FO#{x},#{y+2}^FB#{width},#{max_lines},#{line_spacing},#{justification},#{hanging_indent}#{zpl_field_data}^FS"
+          "\n^FW#{rotation}^CF#{font_type},#{font_size}^CI28^FO#{x+2},#{y}^FB#{width},#{max_lines},#{line_spacing},#{justification},#{hanging_indent}#{zpl_field_data}" +
+          "\n^FW#{rotation}^CF#{font_type},#{font_size}^CI28^FO#{x},#{y+2}^FB#{width},#{max_lines},#{line_spacing},#{justification},#{hanging_indent}#{zpl_field_data}"
         else
-          "\n^FW#{rotation}^CF#{font_type},#{font_size}^CI28^FO#{x},#{y}^FB#{width},#{max_lines},#{line_spacing},#{justification},#{hanging_indent}#{zpl_field_data}^FS"
+          "\n^FW#{rotation}^CF#{font_type},#{font_size}^CI28^FO#{x},#{y}^FB#{width},#{max_lines},#{line_spacing},#{justification},#{hanging_indent}#{zpl_field_data}"
         end
       end
       
-      def zpl_field_data
-        if @variable_id.nil?
-          # Static field data
-          "^FD#{data}" 
-        else
-          # Variable field number
-          "^FN#{@variable_id}"
-        end
-      end
-
       private
 
       def check_attributes
